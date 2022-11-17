@@ -11,7 +11,7 @@ android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "com.lgtm.default_android_project_template"
+        applicationId "com.lgtm.i_am_home"
         minSdk 23
         targetSdk 31
         versionCode 1
@@ -51,6 +51,7 @@ dependencies {
 
     implementation "androidx.fragment:fragment-ktx:$rootProject.fragmentVersion"
 
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$rootProject.lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-process:$rootProject.lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$rootProject.lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$rootProject.lifecycleVersion"
@@ -59,6 +60,7 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$rootProject.navigationVersion"
 
     implementation "com.google.dagger:hilt-android:$rootProject.hiltVersion"
+    implementation "androidx.work:work-runtime-ktx:$rootProject.hiltVersion"
     kapt "com.google.dagger:hilt-android-compiler:$rootProject.hiltVersion"
 
     implementation "androidx.preference:preference-ktx:$rootProject.preferenceVersion"
@@ -66,6 +68,17 @@ dependencies {
     implementation "androidx.room:room-runtime:$rootProject.roomVersion"
     implementation "androidx.room:room-ktx:$rootProject.roomVersion"
     kapt "androidx.room:room-compiler:$rootProject.roomVersion"
+
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+
+    implementation "com.squareup.retrofit2:retrofit:2.9.0"
+    implementation "com.squareup.retrofit2:converter-moshi:2.9.0"
+    implementation "com.squareup.moshi:moshi:1.13.0"
+    implementation "com.squareup.moshi:moshi-kotlin:1.13.0"
+
+    implementation 'com.squareup.okhttp3:okhttp:3.8.0'
+    implementation "com.squareup.okhttp3:logging-interceptor:3.11.0"
 
     // 3rd-party libs
     debugImplementation "com.jakewharton.timber:timber:$rootProject.timberVersion"
