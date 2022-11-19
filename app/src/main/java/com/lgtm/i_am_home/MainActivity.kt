@@ -1,159 +1,112 @@
 package com.lgtm.i_am_home
 
-import android.app.ListActivity
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
-import androidx.core.app.ActivityCompat
-import com.lgtm.i_am_home.Constant.PERMISSIONS
-import com.lgtm.i_am_home.Constant.REQUEST_ALL_PERMISSION
-import com.lgtm.i_am_home.Constant.REQUEST_ENABLE_BT
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import com.lgtm.i_am_home.databinding.ActivityMainBinding
-import com.lgtm.i_am_home.utils.showSnackBar
+import com.lgtm.i_am_home.permission.PermissionManager
 import dagger.hilt.android.AndroidEntryPoint
 
-private const val SCAN_PERIOD: Long = 10000
-
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), BluetoothGuide.OnCheckModelListener, BluetoothGuide.OnNotifyValueListener<XiaomiSensor> {
 
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
 
-    private val bluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothManager.adapter
-    }
-    private var scanResults: ArrayList<BluetoothDevice>? = ArrayList()
-    private var bleGatt: BluetoothGatt? = null
+    // TODO : Hilt
+    private val permissionManager = PermissionManager(this)
 
-    private val BLEScanCallback: ScanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            super.onScanResult(callbackType, result)
-            addScanResult(result)
-        }
-
-        override fun onBatchScanResults(results: List<ScanResult>) {
-            for (result in results) {
-                addScanResult(result)
-            }
-        }
-
-        override fun onScanFailed(_error: Int) {
-        }
-
-        /**
-         * Add scan result
-         */
-        private fun addScanResult(result: ScanResult) {
-            // get scanned device
-            val device = result.device
-            // get scanned device MAC address
-            val deviceAddress = device.address
-            val deviceName = device.name
-
-            // 중복 체크
-            for (dev in scanResults!!) {
-                if (dev.address == deviceAddress) return
-            }
-            // add arrayList
-            scanResults?.add(result.device)
-            // status text UI update
-            // statusTxt.set("add scanned device: $deviceAddress")
-
-            // TODO
-            // scanlist update 이벤트
-            // _listUpdate.value = Event(true)
-        }
-    }
+    private lateinit var bluetoothGuide: BluetoothGuide
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        checkSupportBLE()
-        requestPermission()
+        bluetoothGuide = BluetoothGuide(
+            adapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        ).apply {
+            setOnCheckModelListener(this@MainActivity)
+            setOnNotifyValueListener(this@MainActivity)
+        }
+
+        // Bluetooth System On with permission
+        if (bluetoothGuide.isOn) {
+            requestLocationPermission()
+        } else {
+            requestBluetoothOn()
+        }
 
         setButtons()
     }
 
+    private fun requestBluetoothOn() {
+        val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        startActivityForResult(intent, BluetoothGuide.INTENT_REQUEST_BLUETOOTH_ENABLE)
+    }
+
     private fun setButtons() {
         binding.scanButton.setOnClickListener {
-            if (bluetoothAdapter == null || !bluetoothAdapter?.isEnabled!!) {
-                requestEnableBLE()
-            }
-
-            val settings = ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .build()
-
-            bluetoothAdapter?.bluetoothLeScanner?.startScan(null, settings, BLEScanCallback)
+            bluetoothGuide.scanDevices()
         }
     }
 
-    // TODO : Dialog가 더 적합
-    private fun checkSupportBLE() {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            showSnackBar("BLE를 지원하지 않는 기기입니다.\n3초뒤 앱을 종료합니다.")
-            Handler().postDelayed ({
-                finish()
-            }, 3000)
-        }
-    }
-
-
-    private fun requestPermission() {
-        if (!hasPermissions(this, PERMISSIONS)) {
-            requestPermissions(PERMISSIONS, REQUEST_ALL_PERMISSION)
-        }
-    }
-
-    // TODO : requestContract
-    private fun requestEnableBLE() {
-        val bleEnableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        startActivityForResult(bleEnableIntent, REQUEST_ENABLE_BT)
-    }
-
-    private fun hasPermissions(context: Context?, permissions: Array<String>): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
-            for (permission in permissions) {
-                if (ActivityCompat.checkSelfPermission(context, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                    return false
-                }
-            }
-        }
-        return true
+    private fun requestLocationPermission() {
+        permissionManager.setPermissions(100, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
+            .onPermissionGranted { }
+            .onPermissionDenied { }
+            .request()
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String?>,
+        permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            REQUEST_ALL_PERMISSION -> {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    showSnackBar("Permissions granted!")
-                } else {
-                    requestPermissions(permissions, REQUEST_ALL_PERMISSION)
-                    showSnackBar("Permissions must be granted!")
-                }
-            }
-        }
+        permissionManager.handleRequestPermissionResult(requestCode, grantResults)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clear the resources
+        bluetoothGuide.disconnectGATTAll()
+        bluetoothGuide.onComplete()
+    }
+
+    override fun onValue(deivce: BluetoothDevice?, value: XiaomiSensor) {
+
+    }
+
+    override fun isChecked(bytes: ByteArray?): Boolean {
+        bytes ?: return false
+
+        return XiaomiSensor.isType(bytes)
+    }
+
+    override fun scannedDevice(result: ScanResult?) {
+        // Start Connecting device.
+        Log.d("Doran", result?.device.toString())
+        bluetoothGuide.connGATT(applicationContext, result!!.device)
+    }
+
+    override fun formatter(characteristic: BluetoothGattCharacteristic?): XiaomiSensor {
+        // Format the data
+        val value = characteristic?.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0) ?: 0
+        val value2 = characteristic?.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1) ?: 0
+        val temperature = value * 0.01f
+        val humidity = value2 and 0xFF00 shr 8
+        return XiaomiSensor(
+            System.currentTimeMillis(),
+            temperature,
+            humidity
+        )
+    }
 
 }
