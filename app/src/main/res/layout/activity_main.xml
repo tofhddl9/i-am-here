@@ -13,4 +13,10 @@
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_main"/>
 
+    <Button
+        android:id="@+id/scan_button"
+        android:layout_width="wrap_content"
+        android:text="Scan"
+        android:layout_height="wrap_content"/>
+
 </FrameLayout>

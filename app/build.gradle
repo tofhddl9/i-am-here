@@ -12,10 +12,12 @@ android {
 
     defaultConfig {
         applicationId "com.lgtm.i_am_home"
-        minSdk 23
+        minSdk 26
         targetSdk 31
         versionCode 1
         versionName "1.0"
+
+        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -60,8 +62,8 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$rootProject.navigationVersion"
 
     implementation "com.google.dagger:hilt-android:$rootProject.hiltVersion"
-    implementation "androidx.work:work-runtime-ktx:$rootProject.hiltVersion"
     kapt "com.google.dagger:hilt-android-compiler:$rootProject.hiltVersion"
+    implementation "androidx.work:work-runtime-ktx:2.7.1"
 
     implementation "androidx.preference:preference-ktx:$rootProject.preferenceVersion"
 
