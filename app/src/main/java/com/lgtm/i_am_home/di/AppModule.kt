@@ -1,12 +1,17 @@
 package com.lgtm.i_am_home.di
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.room.Room
+import com.lgtm.i_am_home.BluetoothRepository
 import com.lgtm.i_am_home.data.source.FooDataSource
 import com.lgtm.i_am_home.data.source.FooRepository
 import com.lgtm.i_am_home.data.source.FooRepositoryImpl
 import com.lgtm.i_am_home.data.source.local.FooDatabase
 import com.lgtm.i_am_home.data.source.local.FooLocalDataSource
+import com.lgtm.i_am_home.usecase.ScanDeviceUsecase
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -50,6 +55,20 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+    fun provideBluetoothAdapter(@ApplicationContext context: Context): BluetoothAdapter {
+        return (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+    }
+
+    @Singleton
+    @Provides
+    fun provideBluetoothRepository(bluetoothAdapter: BluetoothAdapter): BluetoothRepository {
+        return BluetoothRepository(bluetoothAdapter)
+    }
+
+    @Singleton
+    @Provides
+    fun provideScanDeviceUseCase(bluetoothRepository: BluetoothRepository): ScanDeviceUsecase {
+        return ScanDeviceUsecase(bluetoothRepository)
+    }
 
 }
