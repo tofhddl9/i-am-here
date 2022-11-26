@@ -1,37 +1,60 @@
-package com.lgtm.i_am_home
+package com.lgtm.i_am_home.data
 
+import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.os.ParcelUuid
 import android.util.Log
-import androidx.core.os.HandlerCompat
+import com.lgtm.i_am_home.data.mapper.DeviceMapper.mapToDevice
+import com.lgtm.i_am_home.domain.Device
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.lang.Exception
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.onFailure
-import kotlinx.coroutines.channels.sendBlocking
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.*
 
 class BluetoothRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val adapter: BluetoothAdapter,
 ) {
 
-    private val gattList: MutableList<BluetoothGatt> = ArrayList()
+    private val scanResultSet: MutableSet<ScanResult> = mutableSetOf()
+    private val scannedDeviceList: List<Device>
+        get() {
+            return scanResultSet.map {
+                it.device.mapToDevice()
+            }.toList()
+        }
+//    val scannedDeviceList: Flow<List<Device>> = flow {
+//        scanResultList.map {
+//            it.device.mapToDevice()
+//        }.asFlow()
+//    }
 
+    private val gattList: MutableSet<BluetoothGatt> = mutableSetOf()
+    val pairedDeviceList: Flow<List<Device>> = flow {
+        gattList.asFlow()
+    }
+
+    @SuppressLint("MissingPermission")
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun scannedDeviceFlow(): Flow<ScanResult> = callbackFlow {
+    fun scannedDeviceFlow(): Flow<List<Device>> = callbackFlow {
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                trySend(result).onFailure { }
+                if (scanResultSet.any {
+                    it.device.name == result.device.name
+                }) {
+                    return
+                }
+
+                scanResultSet.add(result)
+                trySend(scannedDeviceList).onFailure {  }
+//                trySend(result.device.mapToDevice())
+//                    .onFailure {  }
             }
         }
 
@@ -56,13 +79,15 @@ class BluetoothRepository @Inject constructor(
         }
     }
 
+    @SuppressLint("MissingPermission")
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun pairedDeviceFlow(device: BluetoothDevice): Flow<BluetoothGatt> = callbackFlow {
+    fun addPairedDeviceFlow(device: Device): Flow<Device> = callbackFlow {
         val gattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        trySend(gatt)
+                        gattList.add(gatt)
+                        trySend(gatt.mapToDevice())
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
 
@@ -71,8 +96,10 @@ class BluetoothRepository @Inject constructor(
             }
         }
 
-        if (adapter.bondedDevices.contains(device)) {
-            device.connectGatt(context, false, gattCallback)
+        adapter.bondedDevices.first { connectableDevice ->
+            connectableDevice.address == device.address
+        }.also {
+            it.connectGatt(context, false, gattCallback)
         }
 
     }
