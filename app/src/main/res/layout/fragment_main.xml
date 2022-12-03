@@ -24,21 +24,42 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/scan_button" />
 
+    <TextView
+        android:id="@+id/paired_device_list_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="페어링된 기기"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintTop_toBottomOf="@id/bluetooth_toggle_button"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/paired_device_list"
         android:layout_width="0dp"
-        android:layout_height="300dp"
+        android:layout_height="250dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/bluetooth_toggle_button"/>
+        app:layout_constraintTop_toBottomOf="@id/paired_device_list_title"/>
+
+    <TextView
+        android:id="@+id/connectable_device_list_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="연결 가능한 기기"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintTop_toBottomOf="@id/paired_device_list"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/connectable_device_list"
         android:layout_width="0dp"
-        android:layout_height="300dp"
+        android:layout_height="250dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/paired_device_list"/>
+        app:layout_constraintTop_toBottomOf="@id/connectable_device_list_title"/>
 
 
 

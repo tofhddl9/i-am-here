@@ -1,20 +1,16 @@
 package com.lgtm.i_am_home.data
 
-import android.annotation.SuppressLint
 import android.bluetooth.*
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
-import android.util.Log
+import android.content.Intent
+import android.content.IntentFilter
 import com.lgtm.i_am_home.data.mapper.DeviceMapper.mapToDevice
 import com.lgtm.i_am_home.domain.Device
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.lang.Exception
+import java.util.*
 import javax.inject.Inject
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.onFailure
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 
 class BluetoothRepository @Inject constructor(
@@ -22,72 +18,30 @@ class BluetoothRepository @Inject constructor(
     private val adapter: BluetoothAdapter,
 ) {
 
-    private val scanResultSet: MutableSet<ScanResult> = mutableSetOf()
-    private val scannedDeviceList: List<Device>
-        get() {
-            return scanResultSet.map {
-                it.device.mapToDevice()
-            }.toList()
-        }
-//    val scannedDeviceList: Flow<List<Device>> = flow {
-//        scanResultList.map {
-//            it.device.mapToDevice()
-//        }.asFlow()
-//    }
+    var br : BroadcastReceiver? = null
 
-    private val gattList: MutableSet<BluetoothGatt> = mutableSetOf()
+    private val scannedDeviceSet: MutableSet<BluetoothDevice> = mutableSetOf()
+    val scannedDeviceList: Flow<List<Device>> = flow {
+        while (true) {
+            emit(scannedDeviceSet.map { it.mapToDevice() })
+            delay(1000)
+        }
+    }
+
+    private val gattSet: MutableSet<BluetoothGatt> = mutableSetOf()
     val pairedDeviceList: Flow<List<Device>> = flow {
-        gattList.asFlow()
-    }
-
-    @SuppressLint("MissingPermission")
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun scannedDeviceFlow(): Flow<List<Device>> = callbackFlow {
-        val scanCallback = object : ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult) {
-                if (scanResultSet.any {
-                    it.device.name == result.device.name
-                }) {
-                    return
-                }
-
-                scanResultSet.add(result)
-                trySend(scannedDeviceList).onFailure {  }
-//                trySend(result.device.mapToDevice())
-//                    .onFailure {  }
-            }
-        }
-
-        val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setReportDelay(0)
-            .build()
-
-        val scanner = adapter.bluetoothLeScanner
-        try {
-            scanner.startScan(null, settings, scanCallback)
-        } catch (e: Exception) {
-            Log.d("Doran", "$e")
-        }
-
-        awaitClose {
-            try {
-                scanner.stopScan(scanCallback)
-            } catch (e: Exception) {
-
-            }
+        while (true) {
+            emit(gattSet.map { it.mapToDevice() })
+            delay(1000)
         }
     }
 
-    @SuppressLint("MissingPermission")
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun addPairedDeviceFlow(device: Device): Flow<Device> = callbackFlow {
+    fun addPairedDeviceFlow(device: Device) {
         val gattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        gattList.add(gatt)
-                        trySend(gatt.mapToDevice())
+                        gattSet.add(gatt)
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
 
@@ -96,11 +50,67 @@ class BluetoothRepository @Inject constructor(
             }
         }
 
-        adapter.bondedDevices.first { connectableDevice ->
-            connectableDevice.address == device.address
-        }.also {
-            it.connectGatt(context, false, gattCallback)
+        scannedDeviceSet.forEach {
+            if (it.address == device.address) {
+                it.connectGatt(context, false, gattCallback)
+                return@forEach
+            }
         }
+    }
+
+    // TODO 1. discovery 무한대로 하기
+    // TODO 2. 이전에 페어링한 기기 저장해서 스캔 감지시 자동 연결하기.
+    // TODO 3. 애니메이션
+    fun registerBluetoothReceiver(){
+        adapter.startDiscovery()
+        //intentfilter
+        val stateFilter = IntentFilter()
+        stateFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED) //BluetoothAdapter.ACTION_STATE_CHANGED : 블루투스 상태변화 액션
+        stateFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
+        stateFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED) //연결 확인
+        stateFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED) //연결 끊김 확인
+        stateFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        stateFilter.addAction(BluetoothDevice.ACTION_FOUND) //기기 검색됨
+        stateFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED) //기기 검색 시작
+        stateFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED) //기기 검색 종료
+        stateFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+        br = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent) {
+                val action = intent.action //입력된 action
+                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                var name = device?.name ?: "Unknown"
+
+                when (action) {
+                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                        val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                        when (state) {
+                            BluetoothAdapter.STATE_OFF -> { }
+                            BluetoothAdapter.STATE_TURNING_OFF -> { }
+                            BluetoothAdapter.STATE_ON -> { }
+                            BluetoothAdapter.STATE_TURNING_ON -> { }
+                        }
+                    }
+                    BluetoothDevice.ACTION_ACL_CONNECTED -> { }
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> { }
+                    BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
+                        //디바이스가 연결 해제될 경우
+                        //connected.postValue(false)
+                    }
+                    BluetoothAdapter.ACTION_DISCOVERY_STARTED -> { }
+                    BluetoothDevice.ACTION_FOUND -> {
+                        device ?: return
+                        scannedDeviceSet.add(device)
+                    }
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> { }
+
+                }
+            }
+        }
+        //리시버 등록
+        context.registerReceiver(
+            br,
+            stateFilter
+        )
 
     }
 }

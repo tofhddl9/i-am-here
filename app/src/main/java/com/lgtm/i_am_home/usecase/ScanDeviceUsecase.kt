@@ -8,6 +8,11 @@ import kotlinx.coroutines.flow.Flow
 class ScanDeviceUsecase @Inject constructor(
     private val bluetoothRepository: BluetoothRepository,
 ) {
-    operator fun invoke(): Flow<List<Device>> =
-        bluetoothRepository.scannedDeviceFlow()
+//    operator fun invoke(): Flow<List<Device>> =
+//        bluetoothRepository.scannedDeviceFlow()
+        operator fun invoke(): Flow<List<Device>> {
+            bluetoothRepository.registerBluetoothReceiver()
+            return bluetoothRepository.scannedDeviceList
+        }
+
 }

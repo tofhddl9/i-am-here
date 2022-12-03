@@ -1,19 +1,33 @@
 package com.lgtm.i_am_home.presentation
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
+import android.widget.ListAdapter
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.lgtm.i_am_home.R
 import com.lgtm.i_am_home.databinding.FragmentMainBinding
 import com.lgtm.i_am_home.delegate.viewBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import android.bluetooth.BluetoothDevice
+import com.lgtm.i_am_home.domain.Device
+
 
 @AndroidEntryPoint
 class MainFragment: Fragment(R.layout.fragment_main) {
@@ -28,8 +42,13 @@ class MainFragment: Fragment(R.layout.fragment_main) {
         super.onViewCreated(view, savedInstanceState)
 
         requestPermission()
+        registerBluetoothBR()
         initViews()
         observeViewModel()
+    }
+
+    private fun registerBluetoothBR() {
+
     }
 
     private fun initViews() {
@@ -38,9 +57,19 @@ class MainFragment: Fragment(R.layout.fragment_main) {
     }
 
     private fun initRecyclerViews() {
-        binding.pairedDeviceList
+        binding.connectableDeviceList.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+            adapter = ScannedDeviceListAdapter(::onScannedItemClick)
+        }
 
-        binding.connectableDeviceList
+        binding.pairedDeviceList.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+            adapter = ScannedDeviceListAdapter(null) //TODO. Create new one
+        }
+    }
+
+    private fun onScannedItemClick(device: Device) {
+        viewModel.connectDevice(device)
     }
 
     private fun requestPermission() {
@@ -59,12 +88,18 @@ class MainFragment: Fragment(R.layout.fragment_main) {
         }
 
         binding.bluetoothToggleButton.setOnClickListener {
-
         }
     }
 
     private fun observeViewModel() {
-
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { uiState ->
+                    (binding.connectableDeviceList.adapter as? ScannedDeviceListAdapter)?.submitList(uiState.scannedDeviceList)
+                    (binding.pairedDeviceList.adapter as? ScannedDeviceListAdapter)?.submitList(uiState.pairedDeviceList)
+                }
+            }
+        }
     }
 
     private fun Context.checkAllPermission(permission: Array<String>) : Boolean {
@@ -82,10 +117,12 @@ class MainFragment: Fragment(R.layout.fragment_main) {
     companion object {
         val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN,
             Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
         )
     }
 }

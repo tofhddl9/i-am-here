@@ -10,7 +10,7 @@ object DeviceMapper {
     @SuppressLint("MissingPermission")
     fun BluetoothDevice.mapToDevice(): Device =
         Device(
-            name = name ?: "123",
+            name = name ?: "Unknown Device",
             address = address,
             isConnected = false
         )
