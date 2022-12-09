@@ -1,4 +1,4 @@
-package com.lgtm.i_am_home.presentation
+package com.lgtm.i_am_home.presentation.main
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity

@@ -20,7 +20,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Black" >
         <activity
-            android:name="com.lgtm.i_am_home.presentation.MainActivity"
+            android:name="com.lgtm.i_am_home.presentation.main.MainActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

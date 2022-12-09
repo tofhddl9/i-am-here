@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.*
 
 class BluetoothRepository @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val dataSource: DeviceDataSource,
     private val adapter: BluetoothAdapter,
 ) {
 
@@ -36,6 +37,8 @@ class BluetoothRepository @Inject constructor(
         }
     }
 
+    val rememberedDevices: Set<Device> = dataSource.getMyDevice()
+
     fun addPairedDeviceFlow(device: Device) {
         val gattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -55,6 +58,13 @@ class BluetoothRepository @Inject constructor(
                 it.connectGatt(context, false, gattCallback)
                 return@forEach
             }
+        }
+    }
+
+    fun rememberDevice(device: Device) {
+        val deviceGatt = gattSet.find { it.device.address == device.address }
+        deviceGatt?.let {
+            dataSource.saveMyDevice(device)
         }
     }
 

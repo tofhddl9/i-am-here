@@ -14,6 +14,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
+    <Button
+        android:id="@+id/radar_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="레이더 모드"
+        android:textColor="@color/white"
+        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toEndOf="@id/scan_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/scan_button"
+        app:layout_constraintBottom_toBottomOf="@id/scan_button"/>
+
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/bluetooth_toggle_button"
         android:layout_width="0dp"

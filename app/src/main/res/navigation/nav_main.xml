@@ -7,15 +7,14 @@
 
     <fragment
         android:id="@+id/main_fragment"
-        android:name="com.lgtm.i_am_home.presentation.MainFragment" >
+        android:name="com.lgtm.i_am_home.presentation.main.MainFragment" >
         <action
-            android:id="@+id/action_compass_fragment_to_mapFragment"
-            app:destination="@id/subFragment" />
+            android:id="@+id/action_main_fragment_to_radarFragment"
+            app:destination="@id/radarFragment" />
     </fragment>
-
     <fragment
-        android:id="@+id/subFragment"
-        android:name="com.lgtm.i_am_home.SubFragment"
-        tools:layout="@layout/fragment_sub" />
+        android:id="@+id/radarFragment"
+        android:name="com.lgtm.i_am_home.presentation.radar.RadarFragment"
+        android:label="RadarFragment" />
 
 </navigation>

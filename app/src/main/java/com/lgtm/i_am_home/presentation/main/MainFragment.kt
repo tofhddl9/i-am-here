@@ -1,15 +1,11 @@
-package com.lgtm.i_am_home.presentation
+package com.lgtm.i_am_home.presentation.main
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.content.BroadcastReceiver
+import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
-import android.widget.ListAdapter
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -18,6 +14,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lgtm.i_am_home.R
 import com.lgtm.i_am_home.databinding.FragmentMainBinding
@@ -25,7 +22,6 @@ import com.lgtm.i_am_home.delegate.viewBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import android.bluetooth.BluetoothDevice
 import com.lgtm.i_am_home.domain.Device
 
 
@@ -64,12 +60,30 @@ class MainFragment: Fragment(R.layout.fragment_main) {
 
         binding.pairedDeviceList.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            adapter = ScannedDeviceListAdapter(null) //TODO. Create new one
+            adapter = PairedDeviceListAdapter(::onPairedItemClick)
         }
     }
 
     private fun onScannedItemClick(device: Device) {
-        viewModel.connectDevice(device)
+        AlertDialog.Builder(context)
+            .setMessage("페어링 하시겠습니까?")
+            .setPositiveButton("네") { _, _ ->
+                viewModel.connectDevice(device)
+            }.setNegativeButton("아니오") { _, _ ->
+
+            }.create()
+            .show()
+    }
+
+    private fun onPairedItemClick(device: Device) {
+        AlertDialog.Builder(context)
+            .setMessage("이 장치를 기억하시겠습니까?")
+            .setPositiveButton("네") { _, _ ->
+                viewModel.rememberDevice(device)
+            }.setNegativeButton("아니오") { _, _ ->
+
+            }.create()
+            .show()
     }
 
     private fun requestPermission() {
@@ -87,6 +101,10 @@ class MainFragment: Fragment(R.layout.fragment_main) {
             viewModel.startScan()
         }
 
+        binding.radarButton.setOnClickListener {
+            moveToRadarPage()
+        }
+
         binding.bluetoothToggleButton.setOnClickListener {
         }
     }
@@ -96,7 +114,7 @@ class MainFragment: Fragment(R.layout.fragment_main) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { uiState ->
                     (binding.connectableDeviceList.adapter as? ScannedDeviceListAdapter)?.submitList(uiState.scannedDeviceList)
-                    (binding.pairedDeviceList.adapter as? ScannedDeviceListAdapter)?.submitList(uiState.pairedDeviceList)
+                    (binding.pairedDeviceList.adapter as? PairedDeviceListAdapter)?.submitList(uiState.pairedDeviceList)
                 }
             }
         }
@@ -112,6 +130,11 @@ class MainFragment: Fragment(R.layout.fragment_main) {
 
     private fun Context.checkSinglePermission(permission: String) : Boolean {
         return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun moveToRadarPage() {
+        val action = MainFragmentDirections.actionMainFragmentToRadarFragment()
+        findNavController().navigate(action)
     }
 
     companion object {
