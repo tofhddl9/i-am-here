@@ -8,6 +8,7 @@ import com.lgtm.i_am_home.domain.Device
 
 interface DeviceDataSource {
     fun saveMyDevice(device: Device)
+    fun removeDevice(device: Device)
     fun getMyDevice(): Set<Device>
 }
 
@@ -23,6 +24,14 @@ class DeviceLocalDataSource @Inject constructor(
         }
 
         save(newRegisteredDevices)
+    }
+
+    override fun removeDevice(device: Device) {
+        get().filterNot { it.address == device.address }
+            .toMutableSet()
+            .also {
+                save(it)
+            }
     }
 
     override fun getMyDevice(): Set<Device> {

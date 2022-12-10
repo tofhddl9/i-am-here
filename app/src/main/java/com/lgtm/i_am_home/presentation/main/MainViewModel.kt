@@ -29,9 +29,11 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                pairedDeviceList = repository.rememberedDevices.toList()
-            )
+            repository.rememberedDeviceList.collectLatest {
+                _uiState.value = _uiState.value.copy(
+                    pairedDeviceList = it
+                )
+            }
         }
     }
 

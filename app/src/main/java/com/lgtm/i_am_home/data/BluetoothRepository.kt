@@ -1,10 +1,12 @@
 package com.lgtm.i_am_home.data
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothDevice.BOND_BONDED
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Log
 import com.lgtm.i_am_home.data.mapper.DeviceMapper.mapToDevice
 import com.lgtm.i_am_home.domain.Device
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,6 +31,24 @@ class BluetoothRepository @Inject constructor(
         }
     }
 
+    // TODO: filter in Domain module
+    private val filteredScannedDeviceSet: MutableSet<BluetoothDevice> = mutableSetOf()
+    val filteredScannedDeviceList: Flow<List<Device>> = flow {
+        while (true) {
+            Log.d("Doran", "scanned : ${filteredScannedDeviceSet.size}")
+            emit(filteredScannedDeviceSet.map { it.mapToDevice() })
+            delay(1000)
+        }
+    }
+
+    private val filteredPairedDeviceSet: MutableSet<BluetoothGatt> = mutableSetOf()
+    val filteredPairedDeviceList: Flow<List<Device>> = flow {
+        while (true) {
+            emit(filteredPairedDeviceSet.map { it.mapToDevice() })
+            delay(1000)
+        }
+    }
+
     private val gattSet: MutableSet<BluetoothGatt> = mutableSetOf()
     val pairedDeviceList: Flow<List<Device>> = flow {
         while (true) {
@@ -37,17 +57,28 @@ class BluetoothRepository @Inject constructor(
         }
     }
 
-    val rememberedDevices: Set<Device> = dataSource.getMyDevice()
+    private val rememberedDevices: MutableSet<Device> = dataSource.getMyDevice().toMutableSet()
+    val rememberedDeviceList: Flow<List<Device>> = flow {
+        while (true) {
+            emit(rememberedDevices.toList())
+            delay(1000)
+        }
+    }
 
     fun addPairedDeviceFlow(device: Device) {
         val gattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        gattSet.add(gatt)
+                        gattSet.find { it.device.address == gatt.device.address } ?: run {
+                            gattSet.add(gatt)
+                        }
+
+//                        scannedDeviceSet.removeIf { it.address == gatt.device.address }
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
-
+                        gatt.close()
+                        gattSet.removeIf { it.device.address == gatt.device.address }
                     }
                 }
             }
@@ -61,11 +92,58 @@ class BluetoothRepository @Inject constructor(
         }
     }
 
+    fun connectDeviceFlow(devices: List<Device>) {
+        val gattCallback = object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        val device = filteredPairedDeviceSet.find { it.device.address == gatt.device.address }
+                        if (device == null) {
+                            Log.d("Doran", "${gatt.device.address} is Connected")
+                            filteredPairedDeviceSet.add(gatt)
+                        } else {
+                            filteredPairedDeviceSet.remove(device)
+                            filteredPairedDeviceSet.add(gatt)
+                        }
+
+
+//                        scannedDeviceSet.removeIf { it.address == gatt.device.address }
+                    }
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        Log.d("Doran", "${gatt.device.name} is Disconnected")
+                        gatt.close()
+                        filteredPairedDeviceSet.removeIf { it.device.address == gatt.device.address }
+                        filteredScannedDeviceSet.removeIf { it.address == gatt.device.address }
+                    }
+                }
+            }
+        }
+
+        devices.forEach { device ->
+            filteredScannedDeviceSet.find { it.address == device.address}?.run {
+                filteredPairedDeviceSet.find { it.device.address == address } ?: run {
+                    Log.d("Doran", "try to connect real ${this.name}")
+                    connectGatt(context, false, gattCallback)
+                }
+//                filteredPairedDeviceSet.add(this)
+            }
+            return@forEach
+        }
+    }
+
     fun rememberDevice(device: Device) {
         val deviceGatt = gattSet.find { it.device.address == device.address }
         deviceGatt?.let {
             dataSource.saveMyDevice(device)
         }
+        rememberedDevices.add(device)
+    }
+
+    fun removeDevice(device: Device) {
+        rememberedDevices.removeIf {
+            it.address == device.address
+        }
+        dataSource.removeDevice(device)
     }
 
     // TODO 1. discovery 무한대로 하기
@@ -88,7 +166,6 @@ class BluetoothRepository @Inject constructor(
             override fun onReceive(context: Context?, intent: Intent) {
                 val action = intent.action //입력된 action
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                var name = device?.name ?: "Unknown"
 
                 when (action) {
                     BluetoothAdapter.ACTION_STATE_CHANGED -> {
@@ -101,17 +178,27 @@ class BluetoothRepository @Inject constructor(
                         }
                     }
                     BluetoothDevice.ACTION_ACL_CONNECTED -> { }
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> { }
-                    BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
-                        //디바이스가 연결 해제될 경우
-                        //connected.postValue(false)
-                    }
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {}
+                    BluetoothDevice.ACTION_ACL_DISCONNECTED -> {}
                     BluetoothAdapter.ACTION_DISCOVERY_STARTED -> { }
                     BluetoothDevice.ACTION_FOUND -> {
-                        device ?: return
+                        device?.name ?: return
+
+                        Log.d("Doran", "${device.name} is Scanned")
                         scannedDeviceSet.add(device)
+
+                        // TODO: Usecase
+                        dataSource.getMyDevice().find {
+                            it.address == device.address
+                        }?.also {
+                            filteredScannedDeviceSet.add(device)
+                        }
                     }
-                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> { }
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        adapter.cancelDiscovery()
+                        adapter.startDiscovery()
+                        Log.d("Doran", "restart discovery")
+                    }
 
                 }
             }
