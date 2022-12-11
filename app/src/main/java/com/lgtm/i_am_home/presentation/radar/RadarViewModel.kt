@@ -1,7 +1,6 @@
 package com.lgtm.i_am_home.presentation.radar
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lgtm.i_am_home.data.BluetoothRepository
@@ -9,16 +8,12 @@ import com.lgtm.i_am_home.domain.Device
 import com.lgtm.i_am_home.domain.usecase.ConnectDeviceUsecase
 import com.lgtm.i_am_home.domain.usecase.ForgetDeviceUsecase
 import com.lgtm.i_am_home.domain.usecase.ScanDeviceUsecase
-import com.lgtm.i_am_home.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -26,10 +21,8 @@ class RadarViewModel @Inject constructor(
     //private val bluetoothOnOff: BluetoothOnOffUsecase,
     private val scanDevice: ScanDeviceUsecase,
     private val connectDevice: ConnectDeviceUsecase,
-    // private val scanAndAutoConnectRememberedDeviceUsecase: ScanAndAutoConnectRememberedDeviceUsecase,
     private val forgetDeviceUsecase: ForgetDeviceUsecase,
-    private val repository: BluetoothRepository,
-    //private val readFromConnectedDevice: ReadFromConnectedDeviceUsecase,
+    private val repository: BluetoothRepository, // TODO : remove
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RadarViewState())
