@@ -5,9 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.lgtm.i_am_home.data.BluetoothRepository
 import com.lgtm.i_am_home.domain.Device
 import com.lgtm.i_am_home.presentation.radar.RadarProgress
-import com.lgtm.i_am_home.usecase.ConnectDeviceUsecase
-import com.lgtm.i_am_home.usecase.RememberDeviceUsecase
-import com.lgtm.i_am_home.usecase.ScanDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.ConnectDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.RememberDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.ScanDeviceUsecase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow

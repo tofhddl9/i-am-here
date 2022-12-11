@@ -7,8 +7,8 @@ import android.content.Context.MODE_PRIVATE
 import com.lgtm.i_am_home.data.BluetoothRepository
 import com.lgtm.i_am_home.data.DeviceDataSource
 import com.lgtm.i_am_home.data.DeviceLocalDataSource
-import com.lgtm.i_am_home.usecase.ForgetDeviceUsecase
-import com.lgtm.i_am_home.usecase.ScanDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.ForgetDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.ScanDeviceUsecase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +16,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+// TODO : adjust module lifecycle
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {

@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:title="내 장치를 찾아서 기억"
-        app:titleTextColor="@color/white"
+        app:titleTextColor="@color/white"   
         android:background="?attr/colorPrimaryDark"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lgtm.i_am_home.data.BluetoothRepository
 import com.lgtm.i_am_home.domain.Device
+import com.lgtm.i_am_home.domain.usecase.ConnectDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.ForgetDeviceUsecase
+import com.lgtm.i_am_home.domain.usecase.ScanDeviceUsecase
 import com.lgtm.i_am_home.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CompletableJob

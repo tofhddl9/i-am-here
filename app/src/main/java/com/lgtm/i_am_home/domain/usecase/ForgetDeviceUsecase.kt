@@ -1,4 +1,4 @@
-package com.lgtm.i_am_home.usecase
+package com.lgtm.i_am_home.domain.usecase
 
 import com.lgtm.i_am_home.data.BluetoothRepository
 import com.lgtm.i_am_home.domain.Device

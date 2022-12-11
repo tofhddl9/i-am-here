@@ -1,4 +1,4 @@
-package com.lgtm.i_am_home.usecase
+package com.lgtm.i_am_home.domain.usecase
 
 import android.util.Log
 import com.lgtm.i_am_home.data.BluetoothRepository
