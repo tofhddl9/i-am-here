@@ -92,6 +92,7 @@ class BluetoothRepository @Inject constructor(
         }
     }
 
+    // TODO : integrate
     fun connectDeviceFlow(devices: List<Device>) {
         val gattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -146,9 +147,7 @@ class BluetoothRepository @Inject constructor(
         dataSource.removeDevice(device)
     }
 
-    // TODO 1. discovery 무한대로 하기
-    // TODO 2. 이전에 페어링한 기기 저장해서 스캔 감지시 자동 연결하기.
-    // TODO 3. 애니메이션
+    // TODO: 정리
     fun registerBluetoothReceiver(){
         adapter.startDiscovery()
         //intentfilter
@@ -157,7 +156,6 @@ class BluetoothRepository @Inject constructor(
         stateFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
         stateFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED) //연결 확인
         stateFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED) //연결 끊김 확인
-        stateFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         stateFilter.addAction(BluetoothDevice.ACTION_FOUND) //기기 검색됨
         stateFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED) //기기 검색 시작
         stateFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED) //기기 검색 종료
@@ -178,7 +176,6 @@ class BluetoothRepository @Inject constructor(
                         }
                     }
                     BluetoothDevice.ACTION_ACL_CONNECTED -> { }
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {}
                     BluetoothDevice.ACTION_ACL_DISCONNECTED -> {}
                     BluetoothAdapter.ACTION_DISCOVERY_STARTED -> { }
                     BluetoothDevice.ACTION_FOUND -> {

@@ -9,13 +9,21 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:title="내 장치 찾기"
+        app:title="내 장치를 찾아서 기억"
         app:titleTextColor="@color/white"
         android:background="?attr/colorPrimaryDark"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/scan_button"/>
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        app:layout_constraintBottom_toBottomOf="@id/scan_button"
+        app:layout_constraintEnd_toStartOf="@id/scan_button"
+        app:layout_constraintTop_toTopOf="@id/scan_button" />
 
     <Button
         android:id="@+id/scan_button"
@@ -45,6 +53,7 @@
         android:layout_height="wrap_content"
         android:text="블루투스 켜기"
         android:layout_marginHorizontal="8dp"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/scan_button" />
@@ -54,6 +63,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:paddingHorizontal="8dp"
         android:text="페어링된 기기"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -64,6 +74,7 @@
         android:id="@+id/paired_device_list"
         android:layout_width="0dp"
         android:layout_height="250dp"
+        android:paddingHorizontal="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/paired_device_list_title"/>
@@ -73,6 +84,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="연결 가능한 기기"
+        android:paddingHorizontal="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0"
@@ -82,6 +94,7 @@
         android:id="@+id/connectable_device_list"
         android:layout_width="0dp"
         android:layout_height="250dp"
+        android:paddingHorizontal="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/connectable_device_list_title"/>

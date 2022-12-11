@@ -32,7 +32,7 @@ class RadarViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RadarViewState())
     val uiState = _uiState.asStateFlow()
 
-    var job: Job? = null
+    private var job: Job? = null
 
     init {
         viewModelScope.launch {

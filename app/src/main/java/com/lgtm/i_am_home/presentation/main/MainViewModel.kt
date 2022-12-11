@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lgtm.i_am_home.data.BluetoothRepository
 import com.lgtm.i_am_home.domain.Device
+import com.lgtm.i_am_home.presentation.radar.RadarProgress
 import com.lgtm.i_am_home.usecase.ConnectDeviceUsecase
 import com.lgtm.i_am_home.usecase.RememberDeviceUsecase
 import com.lgtm.i_am_home.usecase.ScanDeviceUsecase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
@@ -27,25 +29,36 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainViewState())
     val uiState = _uiState.asStateFlow()
 
+    private var job: Job? = null
+
     init {
-        viewModelScope.launch {
-            repository.rememberedDeviceList.collectLatest {
+//        viewModelScope.launch {
+//            repository.rememberedDeviceList.collectLatest {
+//                _uiState.value = _uiState.value.copy(
+//                    pairedDeviceList = it
+//                )
+//            }
+//        }
+    }
+
+    private fun startScan() {
+        job = viewModelScope.launch {
+            scanDevice().collectLatest { devices ->
                 _uiState.value = _uiState.value.copy(
-                    pairedDeviceList = it
+                    scannedDeviceList = devices,
+                    isScanning = true
                 )
             }
+
         }
     }
 
-    fun startScan() {
-        viewModelScope.launch {
-            scanDevice().collectLatest { devices ->
-                _uiState.value = _uiState.value.copy(
-                    scannedDeviceList = devices
-                )
-            }
+    private fun stopScan() {
+        _uiState.value = _uiState.value.copy(
+            isScanning = false
+        )
 
-        }
+        job?.cancel()
     }
 
     fun connectDevice(device: Device) {
@@ -64,4 +77,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun onScanButtonClicked() {
+        if (isScanning()) {
+            stopScan()
+        } else {
+            startScan()
+        }
+    }
+
+    private fun isScanning(): Boolean = _uiState.value.isScanning
 }

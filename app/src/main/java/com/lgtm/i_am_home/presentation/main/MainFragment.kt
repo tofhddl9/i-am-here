@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
+import android.opengl.Visibility
 import android.os.Bundle
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
@@ -20,7 +21,6 @@ import com.lgtm.i_am_home.R
 import com.lgtm.i_am_home.databinding.FragmentMainBinding
 import com.lgtm.i_am_home.delegate.viewBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import com.lgtm.i_am_home.domain.Device
 import kotlinx.coroutines.flow.collectLatest
@@ -98,25 +98,44 @@ class MainFragment: Fragment(R.layout.fragment_main) {
     private fun initButtons() {
         binding.scanButton.setOnClickListener {
             requireContext().checkAllPermission(REQUIRED_PERMISSIONS)
-            viewModel.startScan()
+            viewModel.onScanButtonClicked()
         }
 
         binding.radarButton.setOnClickListener {
             moveToRadarPage()
         }
 
-        binding.bluetoothToggleButton.setOnClickListener {
-        }
+//        binding.bluetoothToggleButton.setOnClickListener {
+//        }
     }
 
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collectLatest { uiState ->
-                    (binding.connectableDeviceList.adapter as? ScannedDeviceListAdapter)?.submitList(uiState.scannedDeviceList)
-                    (binding.pairedDeviceList.adapter as? PairedDeviceListAdapter)?.submitList(uiState.pairedDeviceList)
+                    updateScannedDeviceList(uiState.scannedDeviceList)
+                    updatePairedDeviceList(uiState.pairedDeviceList)
+                    updateScanState(uiState.isScanning)
                 }
             }
+        }
+    }
+
+    private fun updateScannedDeviceList(scannedDeviceList: List<Device>) {
+        (binding.connectableDeviceList.adapter as? ScannedDeviceListAdapter)?.submitList(scannedDeviceList)
+    }
+
+    private fun updatePairedDeviceList(pairedDeviceList: List<Device>) {
+        (binding.pairedDeviceList.adapter as? PairedDeviceListAdapter)?.submitList(pairedDeviceList)
+    }
+
+    private fun updateScanState(isScanning: Boolean) {
+        if (isScanning) {
+            binding.scanButton.text = "스캔 중지"
+            binding.progressBar.visibility = View.VISIBLE
+        } else {
+            binding.scanButton.text = "스캔 시작"
+            binding.progressBar.visibility = View.GONE
         }
     }
 

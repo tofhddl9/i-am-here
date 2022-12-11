@@ -1,6 +1,7 @@
 package com.lgtm.i_am_home.presentation.radar
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -26,7 +27,6 @@ class RadarTargetListAdapter(
     }
 
     class VH(private val binding: DeviceItemBinding) : RecyclerView.ViewHolder(binding.root) {
-
         fun setData(device: Device) {
             binding.deviceName.text = device.name
             binding.deviceAddress.text = device.address
