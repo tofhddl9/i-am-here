@@ -79,7 +79,7 @@ class RadarFragment: Fragment(R.layout.fragment_radar) {
             msg += "${it.name} "
         }
         msg += "이 연결되었습니다"
-        Toast.makeText(context, msg, 2000).show()
+        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
     }
 
     private fun updateRadar(progress: RadarProgress) {
