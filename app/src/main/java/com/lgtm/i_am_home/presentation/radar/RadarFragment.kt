@@ -131,4 +131,3 @@ class RadarFragment: Fragment(R.layout.fragment_radar) {
     }
 
 }
-// for test
