@@ -2,8 +2,7 @@ name: Build Debug Apk and Deploy
 
 on:
   pull_request:
-    branches:
-      - dev
+    branches: [ "dev" ]
 
 jobs:
   # Debug build and upload apk to artifact
